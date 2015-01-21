@@ -2,6 +2,7 @@ package ocs.com.ebys;
 
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -11,7 +12,6 @@ import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 public class MainActivity extends ActionBarActivity
         implements NavigationDrawerCallbacks,
@@ -20,6 +20,7 @@ public class MainActivity extends ActionBarActivity
     private Toolbar mToolbar;
     private NavigationDrawerFragment mNavigationDrawerFragment;
     private Fragment fragment;
+    private SearchView searchView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,7 +30,7 @@ public class MainActivity extends ActionBarActivity
         setSupportActionBar(mToolbar);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
-        mNavigationDrawerFragment = (NavigationDrawerFragment) getFragmentManager().findFragmentById(R.id.fragment_drawer);
+        mNavigationDrawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_drawer);
         mNavigationDrawerFragment.setup(R.id.fragment_drawer, (DrawerLayout) findViewById(R.id.drawer), mToolbar);
     }
 
@@ -41,7 +42,14 @@ public class MainActivity extends ActionBarActivity
                 break;
 
             case 1:
-                Toast.makeText(this, "Not yet implemented", Toast.LENGTH_SHORT).show();
+                PreferenceController.saveSharedSetting(MainActivity.this,
+                        PreferenceController.PREF_USERNAME, null);
+                PreferenceController.saveSharedSetting(MainActivity.this,
+                        PreferenceController.PREF_PASSWORD, null);
+
+                Intent i = new Intent(MainActivity.this, LoginActivity.class);
+                startActivity(i);
+                finish();
                 break;
 
             default:
@@ -55,14 +63,6 @@ public class MainActivity extends ActionBarActivity
     }
 
     @Override
-    public void onBackPressed() {
-        if (mNavigationDrawerFragment.isDrawerOpen())
-            mNavigationDrawerFragment.closeDrawer();
-        else
-            super.onBackPressed();
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         if (!mNavigationDrawerFragment.isDrawerOpen()) {
             // Only show items in the action bar relevant to this screen
@@ -72,9 +72,10 @@ public class MainActivity extends ActionBarActivity
 
             SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
             MenuItem searchMenuItem = menu.findItem(R.id.menu_search);
-            SearchView searchView = (SearchView) searchMenuItem.getActionView();
+            searchMenuItem.expandActionView();
+            searchView = (SearchView) searchMenuItem.getActionView();
             searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
-            searchView.setSubmitButtonEnabled(true);
+            searchView.setSubmitButtonEnabled(false);
             searchView.setOnQueryTextListener(this);
 
             return true;
@@ -93,5 +94,22 @@ public class MainActivity extends ActionBarActivity
             ((CourseFragment) fragment).filterList(s);
         }
         return true;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mNavigationDrawerFragment.isDrawerOpen()) {
+            mNavigationDrawerFragment.closeDrawer();
+        } else if (searchView.isFocused()) {
+            searchView.post(new Runnable() {
+                @Override
+                public void run() {
+                    searchView.setQuery("", true);
+                    searchView.clearFocus();
+                }
+            });
+        } else {
+            super.onBackPressed();
+        }
     }
 }

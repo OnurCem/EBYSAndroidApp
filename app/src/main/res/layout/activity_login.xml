@@ -6,13 +6,23 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin" >
 
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="15dp"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/ege" />
+
     <EditText
         android:id="@+id/username"
         android:layout_width="match_parent"
         android:layout_height="50dp"
+        android:layout_below="@id/logo"
+        android:hint="Öğrenci no"
         android:textColor="#000000"
-        android:textColorHint="#000000"
-        android:hint="Öğrenci no"/>
+        android:textColorHint="#5A5A5A" />
 
     <EditText
         android:id="@+id/password"
@@ -20,19 +30,19 @@
         android:layout_height="50dp"
         android:layout_below="@id/username"
         android:layout_marginTop="10dp"
+        android:hint="Şifre"
         android:textColor="#000000"
-        android:textColorHint="#000000"
-        android:hint="Şifre" />
+        android:textColorHint="#5A5A5A"/>
 
     <CheckBox
         android:id="@+id/remember_me"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Beni hatırla"
-        android:textColor="#000000"
         android:layout_alignBottom="@+id/login"
         android:layout_toLeftOf="@+id/login"
-        android:layout_marginRight="10dp" />
+        android:layout_marginRight="10dp"
+        android:textColor="#000000" />
 
     <Button
         android:id="@+id/login"
@@ -42,6 +52,7 @@
         android:layout_marginTop="20dp"
         android:layout_marginRight="20dp"
         android:layout_alignParentRight="true"
+        android:textColor="#FFFFFF"
         android:text="Giriş" />
 
 </RelativeLayout>

@@ -8,7 +8,7 @@
     -->
 
     <color name="primary_color">#3F51B5</color>
-    <color name="primary_dark_color">#3F51B5</color>
+    <color name="primary_dark_color">#1A237E</color>
     <color name="accent_color">#3F51B5</color>
     <color name="drawer_background">#F2F2F2</color>
     <color name="window_background">#DEDEDE</color>

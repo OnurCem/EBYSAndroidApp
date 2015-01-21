@@ -9,7 +9,8 @@ public class Course {
 	private String instructor;
 	private String attendance;
 	private List<Grade> grades;
-	
+    private String letterGrade;
+
 	public Course() {
 		grades = new ArrayList<Grade>();
 	}
@@ -36,6 +37,7 @@ public class Course {
 	
 	public void setInstructor(String instructor) {
 		this.instructor = instructor;
+        addGrade(new Grade("Öğretim Üyesi", instructor));
 	}
 	
 	public String getAttendance() {
@@ -44,6 +46,7 @@ public class Course {
 	
 	public void setAttendance(String attendance) {
 		this.attendance = attendance;
+        addGrade(new Grade("Devam Durumu", attendance));
 	}
 	
 	public List<Grade> getGrades() {
@@ -53,6 +56,14 @@ public class Course {
 	public void setGrades(List<Grade> grades) {
 		this.grades = grades;
 	}
+
+    public String getLetterGrade() {
+        return letterGrade;
+    }
+
+    public void setLetterGrade(String letterGrade) {
+        this.letterGrade = letterGrade;
+    }
 	
 	public void addGrade(Grade grade) {
 		this.grades.add(grade);

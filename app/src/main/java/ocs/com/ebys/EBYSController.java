@@ -2,7 +2,6 @@ package ocs.com.ebys;
 
 import android.os.AsyncTask;
 import android.widget.Toast;
-
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
@@ -19,7 +18,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -42,6 +40,7 @@ public class EBYSController {
 	private final int HBN = 14;
 	
 	private static EBYSController instance;
+    private static User user;
 	private List<String> cookies;
 	private HttpURLConnection connection;
     private OnLoginTaskCompleted loginTaskListener;
@@ -53,6 +52,10 @@ public class EBYSController {
 		}
 		return instance;
 	}
+
+    public static User getUser() {
+        return user;
+    }
 
 	public void getCourses(OnGetCoursesTaskCompleted listener) {
         getCoursesTaskListener = listener;
@@ -81,11 +84,10 @@ public class EBYSController {
 
                 // 2. Construct above post's content and then send a POST request for
                 // Authentication
-                sendPost(url, postParams);
+                String html = sendPost(url, postParams);
 
-                // 3. Success then go to EBYS
-                String html = getPageContent(ebys);
-                String message = testLoginResult(html);
+                // 3. Check login status
+                String message = checkLoginResult(html);
                 if (message.equals("successful")) {
                     result.setSuccess(true);
                     result.setMessage("Oturum açıldı");
@@ -119,6 +121,12 @@ public class EBYSController {
             try {
                 String html = getPageContent(url);
                 Document doc = Jsoup.parse(html);
+
+                if (user == null) {
+                    String name = doc.select("span#lbl_ad_soyad2").first().text();
+                    String number = doc.select("span#lbl_ogrno2").first().text();
+                    user = new User(name, number);
+                }
 
                 Elements fieldsets = doc.select("fieldset");
                 fieldsets.remove(fieldsets.size() - 1);
@@ -155,9 +163,10 @@ public class EBYSController {
                         }
 
                         course.addGrade(new Grade(headers.get(HBN).text(), grades.get(HBN).text()));
+                        course.setLetterGrade(grades.get(HBN).text().split("-")[0].trim());
 
                         courses.add(course);
-                    } catch (IndexOutOfBoundsException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -189,7 +198,7 @@ public class EBYSController {
         }
     }
 
-	private void sendPost(String url, String postParams) throws IOException {
+	private String sendPost(String url, String postParams) throws IOException {
 		URL obj = new URL(url);
 		connection = (HttpURLConnection) obj.openConnection();
 
@@ -205,15 +214,16 @@ public class EBYSController {
 				"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
 		connection.setRequestProperty("Accept-Language", "en,tr;q=0.8,en-US;q=0.6");
 		connection.setRequestProperty("Cache-Control", "max-age=0");
-		for (String cookie : this.cookies) {
-			connection.addRequestProperty("Cookie", cookie.split(";", 1)[0]);
-			System.out.println(cookie);
-		}
 		connection.setRequestProperty("Connection", "keep-alive");
 		connection.setRequestProperty("Referer", "http://ebys.ege.edu.tr/login.aspx");
 		connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 		connection.setRequestProperty("Content-Length", Integer.toString(postParams.length()));
 		connection.setRequestProperty("DNT", "1");
+        if (cookies != null) {
+            for (String cookie : this.cookies) {
+                connection.addRequestProperty("Cookie", cookie.split(";", 1)[0]);
+            }
+        }
 
 		// Send post request
 		DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
@@ -235,6 +245,8 @@ public class EBYSController {
 			response.append(inputLine);
 		}
 		in.close();
+
+        return response.toString();
 	}
 
 	private String getPageContent(String url) throws IOException {
@@ -322,14 +334,14 @@ public class EBYSController {
 		this.cookies = cookies;
 	}
 
-    private String testLoginResult(String html) {
+    private String checkLoginResult(String html) {
         String result = "successful";
 
-        Pattern pattern = Pattern.compile("\"lblError\">(.*)<");
-        Matcher matcher = pattern.matcher(html);
-        if (matcher.find())
-        {
-            result = matcher.group(1);
+        Document doc = Jsoup.parse(html);
+        String error = doc.select("span#lblError").text();
+
+        if (!error.isEmpty()) {
+            result = error;
         }
 
         return result;

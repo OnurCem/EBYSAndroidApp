@@ -1,16 +1,9 @@
 package ocs.com.ebys;
 
 import android.app.ProgressDialog;
-import android.app.SearchManager;
-import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.view.MenuItemCompat;
-import android.support.v7.widget.SearchView;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ExpandableListView;
@@ -24,6 +17,7 @@ import java.util.List;
 public class CourseFragment extends Fragment
         implements OnGetCoursesTaskCompleted {
 
+    private NavigationDrawerFragment mNavigationDrawerFragment;
     private ProgressDialog progressDialog;
     private ExpandableListView listView;
     private CourseListAdapter adapter;
@@ -35,6 +29,8 @@ public class CourseFragment extends Fragment
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_course, container, false);
         listView = (ExpandableListView) rootView.findViewById(R.id.lv_courses);
+
+        mNavigationDrawerFragment = (NavigationDrawerFragment) getFragmentManager().findFragmentById(R.id.fragment_drawer);
 
         progressDialog = new ProgressDialog(getActivity());
         progressDialog.setMessage("Notlar yükleniyor...");
@@ -50,12 +46,9 @@ public class CourseFragment extends Fragment
     @Override
     public void onGetCoursesTaskCompleted(ServerResult result) {
         if (result.isSuccess()) {
+            mNavigationDrawerFragment.setUserProfile(EBYSController.getUser());
             courses = (List<Course>) result.getData();
             for (Course c : courses) {
-                //System.out.println(c.getName() + " - " + c.getInstructor());
-                for (Grade g : c.getGrades()) {
-                    //System.out.println(g.getName() + " - " + g.getValue());
-                }
                 grades.put(c, c.getGrades());
             }
 

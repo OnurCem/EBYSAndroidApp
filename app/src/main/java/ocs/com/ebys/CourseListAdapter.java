@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -89,7 +90,8 @@ public class CourseListAdapter extends BaseExpandableListAdapter implements Filt
     public View getGroupView(int groupPosition, boolean isExpanded,
                              View convertView, ViewGroup parent) {
 
-        String courseName = ((Course) getGroup(groupPosition)).getName();
+        Course course = (Course) getGroup(groupPosition);
+        String courseName = course.getName();
 
         if (convertView == null) {
             LayoutInflater inflater = (LayoutInflater) this.context
@@ -98,8 +100,10 @@ public class CourseListAdapter extends BaseExpandableListAdapter implements Filt
         }
 
         TextView txtCourseName = (TextView) convertView.findViewById(R.id.course_name);
-        txtCourseName.setTypeface(null, Typeface.BOLD);
+        TextView txtCourseGrade = (TextView) convertView.findViewById(R.id.course_grade);
         txtCourseName.setText(courseName);
+        txtCourseGrade.setText(course.getLetterGrade());
+        txtCourseGrade.setTextColor(Color.parseColor(getColorByGrade(course.getLetterGrade())));
 
         return convertView;
     }
@@ -163,5 +167,22 @@ public class CourseListAdapter extends BaseExpandableListAdapter implements Filt
             filtered = (List<Course>) results.values;
             notifyDataSetChanged();
         }
+    }
+
+    public String getColorByGrade(String grade) {
+        if (grade.equals("AA"))
+            return "#4CAF50";
+        if (grade.equals("BA"))
+            return "#3F51B5";
+        if (grade.equals("BB"))
+            return "#FFC107";
+        if (grade.equals("CB"))
+            return "#FF9800";
+        if (grade.equals("CC"))
+            return "#795548";
+        if (grade.equals("FD"))
+            return "#D50000";
+        else
+            return "#9E9E9E";
     }
 }

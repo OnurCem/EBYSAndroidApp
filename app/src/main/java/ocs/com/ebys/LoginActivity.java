@@ -9,6 +9,7 @@ import android.text.method.PasswordTransformationMethod;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -16,34 +17,47 @@ import android.widget.Toast;
  * Created by Onur Cem on 1/20/2015.
  */
 public class LoginActivity extends ActionBarActivity implements OnLoginTaskCompleted {
+    private String username;
+    private String password;
     private ProgressDialog progressDialog;
-    private EditText username;
-    private EditText password;
+    private EditText editUsername;
+    private EditText editPassword;
     private Button login;
+    private CheckBox rememberMe;
+    private EBYSController ebysCtrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        username = (EditText) findViewById(R.id.username);
-        password = (EditText) findViewById(R.id.password);
-        password.setTransformationMethod(new PasswordTransformationMethod());
+        ebysCtrl = EBYSController.getInstance();
+        editUsername = (EditText) findViewById(R.id.username);
+        editPassword = (EditText) findViewById(R.id.password);
+        editPassword.setTransformationMethod(new PasswordTransformationMethod());
         login = (Button) findViewById(R.id.login);
+        rememberMe = (CheckBox) findViewById(R.id.remember_me);
 
         login.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 hideKeyboard();
-                progressDialog = new ProgressDialog(LoginActivity.this);
-                progressDialog.setMessage("Oturum açılıyor...");
-                progressDialog.show();
+                username = editUsername.getText().toString();
+                password = editPassword.getText().toString();
 
-                EBYSController ebysCtrl = EBYSController.getInstance();
-                ebysCtrl.login(LoginActivity.this, username.getText().toString(),
-                        password.getText().toString());
+                if (!username.isEmpty() && !password.isEmpty()) {
+                    login(username, password);
+                } else {
+                    Toast.makeText(LoginActivity.this, "Öğrenci no ve şifrenizi giriniz", Toast.LENGTH_SHORT).show();
+                }
             }
         });
+
+        if (isRememberedUser()) {
+            login(username, password);
+            editUsername.setText(username);
+            rememberMe.setChecked(true);
+        }
     }
 
     @Override
@@ -52,6 +66,12 @@ public class LoginActivity extends ActionBarActivity implements OnLoginTaskCompl
             progressDialog.dismiss();
         }
         if (result.isSuccess()) {
+            if (rememberMe.isChecked()) {
+                PreferenceController.saveSharedSetting(LoginActivity.this,
+                        PreferenceController.PREF_USERNAME, username);
+                PreferenceController.saveSharedSetting(LoginActivity.this,
+                        PreferenceController.PREF_PASSWORD, password);
+            }
             Intent i = new Intent(LoginActivity.this, MainActivity.class);
             startActivity(i);
             finish();
@@ -61,7 +81,29 @@ public class LoginActivity extends ActionBarActivity implements OnLoginTaskCompl
     }
 
     private void hideKeyboard() {
-        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+        if(getCurrentFocus() != null) {
+            InputMethodManager inputMethodManager =
+                    (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        }
+    }
+
+    private void login(String username, String password) {
+        ebysCtrl.login(LoginActivity.this, username, password);
+        progressDialog = new ProgressDialog(LoginActivity.this);
+        progressDialog.setMessage("Oturum açılıyor...");
+        progressDialog.show();
+    }
+
+    private boolean isRememberedUser() {
+        username = PreferenceController.readSharedSetting(LoginActivity.this,
+                PreferenceController.PREF_USERNAME, null);
+        password = PreferenceController.readSharedSetting(LoginActivity.this,
+                PreferenceController.PREF_PASSWORD, null);
+
+        if (username != null && password != null) {
+            return true;
+        }
+        return false;
     }
 }
