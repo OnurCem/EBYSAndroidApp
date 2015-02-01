@@ -36,44 +36,49 @@ public class NavigationDrawerAdapter extends RecyclerView.Adapter<NavigationDraw
 
     @Override
     public void onBindViewHolder(NavigationDrawerAdapter.ViewHolder viewHolder, final int i) {
-        viewHolder.textView.setText(mData.get(i).getText());
-        viewHolder.textView.setCompoundDrawablesWithIntrinsicBounds(mData.get(i).getDrawable(), null, null, null);
+        if (i != 2) {
+            viewHolder.textView.setText(mData.get(i).getText());
+            viewHolder.textView.setCompoundDrawablesWithIntrinsicBounds(mData.get(i).getDrawable(), null, null, null);
 
-        viewHolder.itemView.setOnTouchListener(new View.OnTouchListener() {
-                                                   @Override
-                                                   public boolean onTouch(View v, MotionEvent event) {
+            viewHolder.itemView.setOnTouchListener(new View.OnTouchListener() {
+                                                       @Override
+                                                       public boolean onTouch(View v, MotionEvent event) {
 
-                                                       switch (event.getAction()) {
-                                                           case MotionEvent.ACTION_DOWN:
-                                                               touchPosition(i);
-                                                               return false;
-                                                           case MotionEvent.ACTION_CANCEL:
-                                                               touchPosition(-1);
-                                                               return false;
-                                                           case MotionEvent.ACTION_MOVE:
-                                                               return false;
-                                                           case MotionEvent.ACTION_UP:
-                                                               touchPosition(-1);
-                                                               return false;
+                                                           switch (event.getAction()) {
+                                                               case MotionEvent.ACTION_DOWN:
+                                                                   touchPosition(i);
+                                                                   return false;
+                                                               case MotionEvent.ACTION_CANCEL:
+                                                                   touchPosition(-1);
+                                                                   return false;
+                                                               case MotionEvent.ACTION_MOVE:
+                                                                   return false;
+                                                               case MotionEvent.ACTION_UP:
+                                                                   touchPosition(-1);
+                                                                   return false;
+                                                           }
+                                                           return true;
                                                        }
-                                                       return true;
                                                    }
-                                               }
-        );
-        viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
-                                                   @Override
-                                                   public void onClick(View v) {
-                                                       if (mNavigationDrawerCallbacks != null)
-                                                           mNavigationDrawerCallbacks.onNavigationDrawerItemSelected(i);
+            );
+            viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                                                       @Override
+                                                       public void onClick(View v) {
+                                                           if (mNavigationDrawerCallbacks != null)
+                                                               mNavigationDrawerCallbacks.onNavigationDrawerItemSelected(i);
+                                                       }
                                                    }
-                                               }
-        );
+            );
 
-        //TODO: selected menu position, change layout accordingly
-        if (mSelectedPosition == i || mTouchedPosition == i) {
-            viewHolder.itemView.setBackgroundColor(viewHolder.itemView.getContext().getResources().getColor(R.color.selected_gray));
+            //TODO: selected menu position, change layout accordingly
+            if (mSelectedPosition == i || mTouchedPosition == i) {
+                viewHolder.itemView.setBackgroundColor(viewHolder.itemView.getContext().getResources().getColor(R.color.selected_gray));
+            } else {
+                viewHolder.itemView.setBackgroundColor(Color.TRANSPARENT);
+            }
         } else {
-            viewHolder.itemView.setBackgroundColor(Color.TRANSPARENT);
+            viewHolder.separator.setVisibility(View.VISIBLE);
+            viewHolder.textView.setVisibility(View.GONE);
         }
     }
 
@@ -100,10 +105,12 @@ public class NavigationDrawerAdapter extends RecyclerView.Adapter<NavigationDraw
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public TextView textView;
+        public View separator;
 
         public ViewHolder(View itemView) {
             super(itemView);
             textView = (TextView) itemView.findViewById(R.id.item_name);
+            separator = itemView.findViewById(R.id.drawer_separator);
         }
     }
 }

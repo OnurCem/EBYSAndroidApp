@@ -1,11 +1,9 @@
 package ocs.com.ebys;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,17 +12,24 @@ import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.TextView;
 
-public class CourseListAdapter extends BaseExpandableListAdapter implements Filterable {
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+/**
+ * Created by Onur Cem on 2/1/2015.
+ */
+public class TranscriptListAdapter extends BaseExpandableListAdapter implements Filterable {
 
     private Context context;
-    private List<Course> listDataHeader; // header titles
+    private List<Transcript> listDataHeader; // header titles
     // child data in format of header title, child title
-    private HashMap<Course, List<Grade>> listDataChild;
-    private List<Course> filtered;
-    private CourseFilter filter;
+    private HashMap<Transcript, List<Course>> listDataChild;
+    private List<Transcript> filtered;
+    private TransciptFilter filter;
 
-    public CourseListAdapter(Context context, List<Course> listDataHeader,
-                             HashMap<Course, List<Grade>> listChildData) {
+    public TranscriptListAdapter(Context context, List<Transcript> listDataHeader,
+                             HashMap<Transcript, List<Course>> listChildData) {
         this.context = context;
         this.listDataHeader = listDataHeader;
         this.listDataChild = listChildData;
@@ -47,20 +52,38 @@ public class CourseListAdapter extends BaseExpandableListAdapter implements Filt
     public View getChildView(int groupPosition, final int childPosition,
                              boolean isLastChild, View convertView, ViewGroup parent) {
 
-        final String gradeName = ((Grade) getChild(groupPosition, childPosition)).getName();
-        final String gradeValue = ((Grade) getChild(groupPosition, childPosition)).getValue();
+        final String courseName = ((Course) getChild(groupPosition, childPosition)).getName();
+        final String courseCredit = ((Course) getChild(groupPosition, childPosition)).getCredit();
+        final String courseGrade = ((Course) getChild(groupPosition, childPosition)).getLetterGrade();
 
         if (convertView == null) {
             LayoutInflater inflater = (LayoutInflater) this.context
                     .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = inflater.inflate(R.layout.course_list_item, null);
+            convertView = inflater.inflate(R.layout.transcript_list_item, null);
         }
 
-        TextView txtGradeName = (TextView) convertView.findViewById(R.id.grade_name);
-        TextView txtGradeValue = (TextView) convertView.findViewById(R.id.grade_value);
+        TextView txtCourseName = (TextView) convertView.findViewById(R.id.transcript_course_name);
+        TextView txtCourseCredit = (TextView) convertView.findViewById(R.id.transcript_course_credit);
+        TextView txtCourseGrade = (TextView) convertView.findViewById(R.id.transcript_course_grade);
 
-        txtGradeName.setText(gradeName + ": ");
-        txtGradeValue.setText(gradeValue);
+        txtCourseName.setText(courseName);
+        txtCourseCredit.setText(courseCredit);
+        txtCourseGrade.setText(courseGrade);
+        txtCourseGrade.setTextColor(Color.parseColor(getColorByGrade(courseGrade)));
+
+        if (courseName.contains("GNO")) {
+            txtCourseName.setGravity(Gravity.RIGHT);
+            txtCourseName.setTypeface(null, Typeface.BOLD);
+            txtCourseName.setPadding(0, 0, 20, 0);
+            txtCourseCredit.setVisibility(View.GONE);
+            txtCourseGrade.setVisibility(View.GONE);
+        } else {
+            txtCourseName.setGravity(Gravity.CENTER_VERTICAL);
+            txtCourseName.setTypeface(null, Typeface.NORMAL);
+            txtCourseName.setPadding(0, 0, 0, 0);
+            txtCourseCredit.setVisibility(View.VISIBLE);
+            txtCourseGrade.setVisibility(View.VISIBLE);
+        }
 
         return convertView;
     }
@@ -90,21 +113,21 @@ public class CourseListAdapter extends BaseExpandableListAdapter implements Filt
     public View getGroupView(int groupPosition, boolean isExpanded,
                              View convertView, ViewGroup parent) {
 
-        final Course course = (Course) getGroup(groupPosition);
-        final String courseName = course.getName();
-        final String letterGrade = course.getLetterGrade();
+        final Transcript transcript = (Transcript) getGroup(groupPosition);
+        final String header = transcript.getHeader();
+        final String cGNO = transcript.getcGNO();
 
         if (convertView == null) {
             LayoutInflater inflater = (LayoutInflater) this.context
                     .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = inflater.inflate(R.layout.course_list_group, null);
+            convertView = inflater.inflate(R.layout.transcript_list_group, null);
         }
 
-        TextView txtCourseName = (TextView) convertView.findViewById(R.id.course_name);
-        TextView txtCourseGrade = (TextView) convertView.findViewById(R.id.course_grade);
-        txtCourseName.setText(courseName);
-        txtCourseGrade.setText(letterGrade);
-        txtCourseGrade.setTextColor(Color.parseColor(getColorByGrade(letterGrade)));
+        TextView txtTranscriptHeader = (TextView) convertView.findViewById(R.id.transcript_header);
+        TextView txtTranscriptGNO = (TextView) convertView.findViewById(R.id.transcript_cGNO);
+
+        txtTranscriptHeader.setText(header);
+        txtTranscriptGNO.setText(cGNO);
 
         return convertView;
     }
@@ -126,24 +149,26 @@ public class CourseListAdapter extends BaseExpandableListAdapter implements Filt
     @Override
     public Filter getFilter() {
         if (filter == null) {
-            filter = new CourseFilter();
+            filter = new TransciptFilter();
         }
 
         return filter;
     }
 
-    private class CourseFilter extends Filter {
+    private class TransciptFilter extends Filter {
 
         @Override
         protected FilterResults performFiltering(CharSequence constraint) {
             FilterResults filterResults = new FilterResults();
             if (constraint != null && constraint.length() > 0) {
-                List<Course> tempList = new ArrayList<Course>();
+                List<Transcript> tempList = new ArrayList<>();
 
                 // search content in friend list
-                for (Course c : listDataHeader) {
-                    if (c.getName().toLowerCase().contains(constraint.toString().toLowerCase())) {
-                        tempList.add(c);
+                for (Transcript t : listDataHeader) {
+                    for (Course c : t.getCourses()) {
+                        if (c.getName().toLowerCase().contains(constraint.toString().toLowerCase())) {
+                            tempList.add(t);
+                        }
                     }
                 }
 
@@ -165,7 +190,7 @@ public class CourseListAdapter extends BaseExpandableListAdapter implements Filt
         @SuppressWarnings("unchecked")
         @Override
         protected void publishResults(CharSequence constraint, Filter.FilterResults results) {
-            filtered = (List<Course>) results.values;
+            filtered = (List<Transcript>) results.values;
             notifyDataSetChanged();
         }
     }

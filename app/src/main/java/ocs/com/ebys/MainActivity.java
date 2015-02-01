@@ -4,14 +4,17 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import org.apache.http.params.CoreConnectionPNames;
 
 public class MainActivity extends ActionBarActivity
         implements NavigationDrawerCallbacks,
@@ -19,29 +22,49 @@ public class MainActivity extends ActionBarActivity
 
     private Toolbar mToolbar;
     private NavigationDrawerFragment mNavigationDrawerFragment;
-    private Fragment fragment;
+    private Fragment activeFragment;
+    private CourseFragment courseFragment;
+    private TranscriptFragment transcriptFragment;
     private SearchView searchView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         mToolbar = (Toolbar) findViewById(R.id.toolbar_actionbar);
         setSupportActionBar(mToolbar);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-
         mNavigationDrawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_drawer);
         mNavigationDrawerFragment.setup(R.id.fragment_drawer, (DrawerLayout) findViewById(R.id.drawer), mToolbar);
+        mNavigationDrawerFragment.setUserProfile(EBYSController.getUser());
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        EBYSController.getInstance().deleteCookies();
+        DataStore.getInstance().deleteData();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        getSupportFragmentManager().putFragment(outState, "activeFragment", activeFragment);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
     public void onNavigationDrawerItemSelected(int position) {
         switch (position) {
             case 0:
-                fragment = new CourseFragment();
+                replaceFragment(CourseFragment.newInstance());
                 break;
 
             case 1:
+                replaceFragment(TranscriptFragment.newInstance());
+                break;
+
+            case 3:
                 PreferenceController.saveSharedSetting(MainActivity.this,
                         PreferenceController.PREF_USERNAME, null);
                 PreferenceController.saveSharedSetting(MainActivity.this,
@@ -51,15 +74,7 @@ public class MainActivity extends ActionBarActivity
                 startActivity(i);
                 finish();
                 break;
-
-            default:
-                fragment = new CourseFragment();
         }
-
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction()
-                .replace(R.id.container, fragment)
-                .commit();
     }
 
     @Override
@@ -72,7 +87,6 @@ public class MainActivity extends ActionBarActivity
 
             SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
             MenuItem searchMenuItem = menu.findItem(R.id.menu_search);
-            searchMenuItem.expandActionView();
             searchView = (SearchView) searchMenuItem.getActionView();
             searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
             searchView.setSubmitButtonEnabled(false);
@@ -90,8 +104,10 @@ public class MainActivity extends ActionBarActivity
 
     @Override
     public boolean onQueryTextChange(String s) {
-        if (fragment instanceof CourseFragment) {
-            ((CourseFragment) fragment).filterList(s);
+        if (activeFragment instanceof CourseFragment) {
+            ((CourseFragment) activeFragment).filterList(s);
+        } else if (activeFragment instanceof TranscriptFragment) {
+            ((TranscriptFragment) activeFragment).filterList(s);
         }
         return true;
     }
@@ -111,5 +127,12 @@ public class MainActivity extends ActionBarActivity
         } else {
             super.onBackPressed();
         }
+    }
+
+    private void replaceFragment(Fragment fragment) {
+        activeFragment = fragment;
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.container, fragment, fragment.getClass().getName())
+                .commit();
     }
 }

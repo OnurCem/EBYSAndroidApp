@@ -1,7 +1,6 @@
 package ocs.com.ebys;
 
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
@@ -16,7 +15,7 @@ import android.widget.Toast;
 /**
  * Created by Onur Cem on 1/20/2015.
  */
-public class LoginActivity extends ActionBarActivity implements OnLoginTaskCompleted {
+public class LoginActivity extends ActionBarActivity implements LoginTaskListener {
     private String username;
     private String password;
     private ProgressDialog progressDialog;
@@ -41,7 +40,6 @@ public class LoginActivity extends ActionBarActivity implements OnLoginTaskCompl
         login.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                hideKeyboard();
                 username = editUsername.getText().toString();
                 password = editPassword.getText().toString();
 
@@ -58,6 +56,15 @@ public class LoginActivity extends ActionBarActivity implements OnLoginTaskCompl
             editUsername.setText(username);
             rememberMe.setChecked(true);
         }
+    }
+
+    @Override
+    public void onLoginTaskStarted() {
+        editUsername.clearFocus();
+        editPassword.clearFocus();
+        progressDialog = new ProgressDialog(LoginActivity.this);
+        progressDialog.setMessage("Oturum açılıyor...");
+        progressDialog.show();
     }
 
     @Override
@@ -90,9 +97,6 @@ public class LoginActivity extends ActionBarActivity implements OnLoginTaskCompl
 
     private void login(String username, String password) {
         ebysCtrl.login(LoginActivity.this, username, password);
-        progressDialog = new ProgressDialog(LoginActivity.this);
-        progressDialog.setMessage("Oturum açılıyor...");
-        progressDialog.show();
     }
 
     private boolean isRememberedUser() {

@@ -1,13 +1,11 @@
 package ocs.com.ebys;
 
 import android.os.AsyncTask;
-import android.widget.Toast;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.HttpURLConnection;
@@ -16,8 +14,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -43,8 +40,9 @@ public class EBYSController {
     private static User user;
 	private List<String> cookies;
 	private HttpURLConnection connection;
-    private OnLoginTaskCompleted loginTaskListener;
-    private OnGetCoursesTaskCompleted getCoursesTaskListener;
+    private LoginTaskListener loginTaskListener;
+    private GetCoursesTaskListener getCoursesTaskListener;
+    private GetTranscriptTaskListener getTranscriptTaskListener;
 	
 	public static EBYSController getInstance() {
 		if (instance == null) {
@@ -57,18 +55,29 @@ public class EBYSController {
         return user;
     }
 
-	public void getCourses(OnGetCoursesTaskCompleted listener) {
-        getCoursesTaskListener = listener;
-        new GetCourses().execute();
-	}
-	
-	public void login(OnLoginTaskCompleted listener, String username, String password) {
+	public void login(LoginTaskListener listener, String username, String password) {
         loginTaskListener = listener;
         new Login().execute(username, password);
 	}
 
+    public void getCourses(GetCoursesTaskListener listener) {
+        getCoursesTaskListener = listener;
+        new GetCourses().execute();
+    }
+
+    public void getTranscript(GetTranscriptTaskListener listener) {
+        getTranscriptTaskListener = listener;
+        new GetTranscript().execute();
+    }
+
     private class Login extends AsyncTask<String, Void, ServerResult> {
         ServerResult result = new ServerResult();
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            loginTaskListener.onLoginTaskStarted();
+        }
 
         @Override
         protected ServerResult doInBackground(String... params) {
@@ -95,7 +104,7 @@ public class EBYSController {
                     result.setSuccess(false);
                     result.setMessage(message);
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 result.setSuccess(false);
                 result.setMessage("Tekrar deneyin");
@@ -112,6 +121,12 @@ public class EBYSController {
 
     private class GetCourses extends AsyncTask<String, Void, ServerResult> {
         ServerResult result = new ServerResult();
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            getCoursesTaskListener.onGetCoursesTaskStarted();
+        }
 
         @Override
         protected ServerResult doInBackground(String... params) {
@@ -163,10 +178,15 @@ public class EBYSController {
                         }
 
                         course.addGrade(new Grade(headers.get(HBN).text(), grades.get(HBN).text()));
-                        course.setLetterGrade(grades.get(HBN).text().split("-")[0].trim());
+                        try {
+                            course.setLetterGrade(grades.get(HBN).text().split("-")[0].trim());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            course.setLetterGrade("");
+                        }
 
                         courses.add(course);
-                    } catch (Exception e) {
+                    } catch (IndexOutOfBoundsException e) {
                         e.printStackTrace();
                     }
                 }
@@ -191,10 +211,79 @@ public class EBYSController {
             try {
                 Collections.reverse(reversed);
                 result.setData(reversed);
-            } catch (UnsupportedOperationException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             getCoursesTaskListener.onGetCoursesTaskCompleted(result);
+        }
+    }
+
+    private class GetTranscript extends AsyncTask<String, Void, ServerResult> {
+        ServerResult result = new ServerResult();
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            getTranscriptTaskListener.onGetTranscriptTaskStarted();
+        }
+
+        @Override
+        protected ServerResult doInBackground(String... params) {
+            String url = HOST_URL + "Ogrenci/Ogr0204/Default.aspx?lang=tr-TR";
+            List<Transcript> transcripts = new ArrayList<>();
+
+            try {
+                String html = getPageContent(url);
+                Document doc = Jsoup.parse(html);
+
+                Elements tables = doc.select("table");
+
+                for (int i = 7; i < tables.size() - 2; i++) {
+                    try {
+                        Transcript transcript = new Transcript();
+
+                        Element table = tables.get(i);
+                        String header = table.select("td.divSemesterHead").first().text();
+                        String GNO = table.select("span[id*=lblGANO]").first().text();
+                        String cGNO = table.select("span[id*=lblTGANO]").first().text();
+                        Elements courseNames = table.select("span[id*=lblDersAdi]");
+                        Elements courseCredits = table.select("span[id*=lblKredi]");
+                        Elements courseGrades = table.select("span[id*=lblHBN]");
+
+                        for (int j = 1; j < courseNames.size(); j++) {
+                            Course course = new Course();
+                            course.setName(courseNames.get(j).text());
+                            course.setCredit(courseCredits.get(j).text());
+                            course.setLetterGrade(courseGrades.get(j).text());
+                            transcript.addCourse(course);
+                        }
+
+                        transcript.setHeader(header);
+                        transcript.setGNO(GNO);
+                        transcript.setcGNO(cGNO);
+                        transcripts.add(transcript);
+                    } catch (Exception e) {
+                        // Just skip this table
+                    }
+                }
+
+                result.setData(transcripts);
+                result.setSuccess(true);
+                result.setMessage("Transkript yüklendi");
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                result.setSuccess(false);
+                result.setMessage("Tekrar deneyin");
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(ServerResult result) {
+            super.onPostExecute(result);
+            getTranscriptTaskListener.onGetTranscriptTaskCompleted(result);
         }
     }
 
@@ -292,7 +381,7 @@ public class EBYSController {
 	}
 
 	private String getFormParams(String html, String username, String password)
-			throws UnsupportedEncodingException {
+			throws Exception {
 
 		System.out.println("Extracting form's data...");
 
@@ -333,6 +422,10 @@ public class EBYSController {
 	private void setCookies(List<String> cookies) {
 		this.cookies = cookies;
 	}
+
+    public void deleteCookies() {
+        this.cookies = null;
+    }
 
     private String checkLoginResult(String html) {
         String result = "successful";

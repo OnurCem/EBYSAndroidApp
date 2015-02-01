@@ -107,7 +107,6 @@ public class NavigationDrawerFragment extends Fragment implements NavigationDraw
                     PreferenceController.saveSharedSetting(getActivity(),
                             PREF_USER_LEARNED_DRAWER, "true");
                 }
-
                 getActivity().invalidateOptionsMenu();
             }
         };
@@ -143,6 +142,12 @@ public class NavigationDrawerFragment extends Fragment implements NavigationDraw
         List<NavigationItem> items = new ArrayList<NavigationItem>();
         items.add(new NavigationItem(getResources().getString(R.string.my_notes),
                 getResources().getDrawable(R.drawable.grade)));
+
+        items.add(new NavigationItem(getResources().getString(R.string.my_transcript),
+                getResources().getDrawable(R.drawable.transcript)));
+
+        // Separator
+        items.add(new NavigationItem("", null));
 
         items.add(new NavigationItem(getResources().getString(R.string.sign_out),
                 getResources().getDrawable(R.drawable.signout)));

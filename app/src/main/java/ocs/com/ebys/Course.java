@@ -6,6 +6,7 @@ import java.util.List;
 public class Course {
 	private String code;
 	private String name;
+    private String credit;
 	private String instructor;
 	private String attendance;
 	private List<Grade> grades;
@@ -13,6 +14,12 @@ public class Course {
 
 	public Course() {
 		grades = new ArrayList<Grade>();
+        code = "";
+        name = "";
+        credit = "";
+        instructor = "";
+        attendance = "";
+        letterGrade = "";
 	}
 	
 	public String getCode() {
@@ -30,8 +37,16 @@ public class Course {
 	public void setName(String name) {
 		this.name = name;
 	}
-	
-	public String getInstructor() {
+
+    public String getCredit() {
+        return credit;
+    }
+
+    public void setCredit(String credit) {
+        this.credit = credit;
+    }
+
+    public String getInstructor() {
 		return instructor;
 	}
 	

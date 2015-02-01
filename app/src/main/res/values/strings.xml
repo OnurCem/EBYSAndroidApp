@@ -2,10 +2,11 @@
 <resources>
 
     <string name="app_name">EBYS</string>
-    <string name="drawer_open">Menu opened</string>
-    <string name="drawer_close">Menu closed</string>
-    <string name="action_settings">Settings</string>
+    <string name="drawer_open">Menu açık</string>
+    <string name="drawer_close">Menu kapalı</string>
+    <string name="action_settings">Ayarlar</string>
     <string name="my_notes">Notlarım</string>
     <string name="sign_out">Güvenli Çıkış</string>
+    <string name="my_transcript">Transkript</string>
 
 </resources>
